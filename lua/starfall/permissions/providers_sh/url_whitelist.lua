@@ -248,3 +248,8 @@ pattern [[(%w+)%.keybase.pub/(.+)]]
 -- Examples:
 -- https://tts.cyzon.us/tts?text=test
 pattern [[tts.cyzon.us/(.+)]]
+
+-- Yandex TTS
+--- Examples:
+--- http://tts.voicetech.yandex.net/tts?speaker=oksana&text=Hello
+simple [[tts.voicetech.yandex.net]]

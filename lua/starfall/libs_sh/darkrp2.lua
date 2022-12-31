@@ -93,7 +93,7 @@ end
 function requestClass:__tostring()
 	return string.format(
 		"%s from %s to %s, expiring in %.02f seconds",
-		DarkRP.formatMoney(self.amount),
+		CONRED.Money.Format(self.amount, true),
 		self.sender:IsValid() and self.sender:SteamID() or "<INVALID>",
 		self.receiver:IsValid() and self.receiver:SteamID() or "<INVALID>",
 		self.expiry-CurTime()
@@ -120,9 +120,9 @@ if SERVER then
 	manager.requests = SF.EntityTable("MoneyRequests")
 	function requestClass:accept()
 		local sender, receiver, amount, instance = self.sender, self.receiver, self.amount, self.instance
-		if sender:canAfford(amount) then
+		if sender:Money_CanAfford("wallet", amount) then
 			printDebug("SF: Accepted money request.", self)
-			DarkRP.payPlayer(sender, receiver, amount)
+			CONRED.Money.Transfer(sender, receiver, "wallet", amount)
 			if self.callbackSuccess then
 				instance:runFunction(self.callbackSuccess, self.message, instance.Types.Player.Wrap(sender), amount)
 			end
@@ -279,7 +279,7 @@ else
 
 		local startTime = SysTime()
 		local desc = vgui.Create("DLabel", self)
-		desc:SetText(string.format("A Starfall processor owned by %q (%s) is asking you for %s. Would you like to send them money?", receiver:GetName(), receiver:SteamID(), DarkRP.formatMoney(amount)))
+		desc:SetText(string.format("A Starfall processor owned by %q (%s) is asking you for %s. Would you like to send them money?", receiver:GetName(), receiver:SteamID(), CONRED.Money.Format(amount)))
 		desc:SetAutoStretchVertical(true)
 		desc:SetWrap(true)
 		desc:Dock(TOP)
@@ -345,7 +345,7 @@ else
 				btnAccept:SetText(string.format("Accept (Wait %s)", string.NiceTime(math.ceil(timeUntilSafe))))
 			else
 				btnAccept:SetText("Accept")
-				if not me:canAfford(amount) then
+				if amount > CONRED.Money.Get("wallet") then
 					btnAccept:SetEnabled(false)
 				else
 					if bool == nil then
@@ -570,7 +570,7 @@ SF.RegisterLibrary("darkrp")
 
 return function(instance)
 
-if not DarkRP then return end
+--if not DarkRP then return end
 
 if util.NetworkStringToID("sf_moneyrequest") ~= 0 then
 	if CLIENT and instance.player == LocalPlayer() then
@@ -595,7 +595,7 @@ local checkpermission = instance.player == SF.Superuser and function() end or SF
 -- @return string The money as a nice string, e.g. "$100,000".
 function darkrp_library.formatMoney(n)
 	checkluatype(n, TYPE_NUMBER)
-	return assertsafety(DarkRP.formatMoney(n))
+	return assertsafety(CONRED.Money.Format(n, true))
 end
 
 --- Get the available vehicles that DarkRP supports.

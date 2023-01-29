@@ -640,14 +640,19 @@ function props_library.createSent(pos, ang, class, frozen, data)
 			if IsValid(entity) then
 				entity:Remove()
 			end
-			SF.Throw("Failed to create entity: " .. errorMsg, 2)
+
+			if debug.getmetatable(errorMsg) == SF.Errormeta then
+				error(errorMsg, 3)
+			else
+				SF.Throw("Failed to create entity (" .. tostring(errorMsg) .. ")", 2)
+			end
 		end
 	end
 
 	if entity and entity:IsValid() then
 		register(entity, instance)
 
-		if CPPI then entity:CPPISetOwner(ply) end
+		if CPPI then entity:CPPISetOwner(ply == SF.Superuser and NULL or ply) end
 
 		local phys = entity:GetPhysicsObject()
 		if phys:IsValid() then

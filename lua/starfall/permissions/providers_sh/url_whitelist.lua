@@ -253,3 +253,8 @@ pattern [[tts.cyzon.us/(.+)]]
 --- Examples:
 --- http://tts.voicetech.yandex.net/tts?speaker=oksana&text=Hello
 simple [[tts.voicetech.yandex.net]]
+
+-- CoinBase
+--- Examples:
+--- https://api.coinbase.com/v2/prices/SOL-RUB/buy
+simple [[api.coinbase.com]]

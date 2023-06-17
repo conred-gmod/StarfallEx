@@ -20,7 +20,7 @@ end
 function SF.Preprocessor.ParseDirectives(filename, source, data)
 	if data.includesdata and data.includesdata[filename] then return end
 
-	for directive, args in string.gmatch(source, "--@(%w+)([^\r\n]*)") do
+	for directive, args in string.gmatch(source, "%-%-@(%w+)([^\r\n]*)") do
 		local func = SF.Preprocessor.directives[directive]
 		if func then
 			func(string.Trim(args), filename, data)
@@ -110,4 +110,9 @@ end)
 SF.Preprocessor.SetGlobalDirective("superuser", function(args, filename, data)
 	if not data.superuser then data.superuser = {} end
 	data.superuser[filename] = true
+end)
+
+SF.Preprocessor.SetGlobalDirective("owneronly", function(args, filename, data)
+	if not data.owneronly then data.owneronly = {} end
+	data.owneronly[filename] = true
 end)

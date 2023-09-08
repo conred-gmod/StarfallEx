@@ -286,6 +286,57 @@ SF.LimitObject = {
 }
 setmetatable(SF.LimitObject, SF.LimitObject)
 
+--- Returns a class that handles entities spawned by an instance
+SF.EntManager = {
+	__index = {
+		register = function(self, instance, ent)
+			if not self.nocallonremove then
+				local function sf_on_remove() self:onremove(instance, ent) end
+				ent.sf_on_remove = sf_on_remove
+				ent:CallOnRemove("starfall_entity_onremove", sf_on_remove)
+			end
+
+			self.entsByInstance[instance][ent] = true
+			self:free(instance.player, -1)
+		end,
+		remove = function(self, instance, ent)
+			if ent:IsValid() then
+				if self.nocallonremove then
+					self:onremove(instance, ent)
+				else
+					-- The die function is called the next frame after 'Remove' which is too slow so call it ourself
+					ent:RemoveCallOnRemove("starfall_entity_onremove")
+					ent.sf_on_remove()
+				end
+				ent:Remove()
+			end
+		end,
+		onremove = function(self, instance, ent)
+			self.entsByInstance[instance][ent] = nil
+			self:free(instance.player, 1)
+		end,
+		clear = function(self, instance)
+			for ent in pairs(self.entsByInstance[instance]) do
+				self:remove(instance, ent)
+			end
+		end,
+		deinitialize = function(self, instance, shouldclear)
+			if shouldclear then
+				self:clear(instance)
+			end
+			self.entsByInstance[instance] = nil
+		end
+	},
+	__call = function(p, cvarname, limitname, max, maxhelp, scale, nocallonremove)
+		local t = SF.LimitObject(cvarname, limitname, max, maxhelp, scale)
+		t.nocallonremove = nocallonremove or false
+		t.entsByInstance = setmetatable({},{__index = function(t,k) local r = {} t[k]=r return r end})
+		return setmetatable(t, p)
+	end
+}
+setmetatable(SF.EntManager, SF.EntManager)
+setmetatable(SF.EntManager.__index, SF.LimitObject)
+
 --- Returns a class that can limit per player and recycle a indestructable resource
 SF.ResourceHandler = {
 	__index = {
@@ -708,10 +759,8 @@ do
 		__index = {
 			add = function(self, index, func)
 				if not (self.hooks[index] or self.hookstoadd[index]) then
+					if self.n>=128 then SF.Throw("Max hooks limit reached", 3) end
 					self.n = self.n + 1
-					if self.n>128 then
-						SF.Throw("Max hooks limit reached", 3)
-					end
 				end
 				self.hookstoadd[index] = func
 			end,
@@ -723,7 +772,7 @@ do
 				self.hookstoadd[index] = nil
 			end,
 			isEmpty = function(self)
-				return next(self.hooks)==nil and next(self.hookstoadd)==nil
+				return self.n==0
 			end,
 			pairs = function(self)
 				for k, v in pairs(self.hookstoadd) do

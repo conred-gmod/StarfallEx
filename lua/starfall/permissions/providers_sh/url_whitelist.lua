@@ -77,8 +77,8 @@ simple [[onedrive.live.com/redir]]
 --- Examples:
 ---  https://docs.google.com/uc?export=download&confirm=UYyi&id=0BxUpZqVaDxVPeENDM1RtZDRvaTA
 
-simple [[docs.google.com/uc]]
-simple [[drive.google.com/uc]]
+pattern [[docs%.google%.com/uc.+]]
+pattern [[drive%.google%.com/uc.+]]
 
 -- Backblaze B2
 --- Examples:
@@ -247,6 +247,15 @@ pattern [[(%w+)%.keybase.pub/(.+)]]
 -- Examples:
 -- https://tts.cyzon.us/tts?text=test
 pattern [[tts.cyzon.us/(.+)]]
+
+-- Revolt
+--- Examples:
+---  https://static.revolt.chat/emoji/mutant/1f440.svg?rev=3
+---  https://autumn.revolt.chat/emojis/01G7J9RTHKEPJM8DM19TX35M8N
+---  https://autumn.revolt.chat/attachments/mmCR_bFMLEfBAE8mweH2u4o9_x6DiDtU9JXoSbdvZE/live-bocchi-reaction.gif
+
+simple [[static.revolt.chat]]
+simple [[autumn.revolt.chat]]
 
 -- Yandex TTS
 --- Examples:

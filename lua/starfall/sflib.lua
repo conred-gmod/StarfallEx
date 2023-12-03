@@ -1950,6 +1950,7 @@ do
 				if file.Exists(sv_filename, "LUA") then
 					addModule(name, sv_filename, true)
 				end
+				SF.Permissions.loadPermissions()
 			end
 			if file.Exists(cl_filename, "LUA") then
 				addModule(name, cl_filename, false)
@@ -1961,7 +1962,6 @@ do
 					files[name..":"..path] = file.Read(path, "LUA")
 				end
 				net.Start("sf_receivelibrary")
-				net.WriteBool(false)
 				net.WriteStarfall({files = files, mainfile = name, proc = Entity(0), owner = Entity(0)})
 				net.Broadcast()
 			end
@@ -1969,13 +1969,10 @@ do
 
 	else
 		net.Receive("sf_receivelibrary", function(len)
-			local init = net.ReadBool()
 			net.ReadStarfall(nil, function(ok, data)
 				if ok then
-					if not init then
-						SF.Modules[data.mainfile] = {}
-						print("Reloaded library: " .. data.mainfile)
-					end
+					SF.Modules[data.mainfile] = {}
+					print("Reloaded library: " .. data.mainfile)
 					for k, code in pairs(data.files) do
 						local modname, path = string.match(k, "(.+):(.+)")
 						local t = SF.Modules[modname]
@@ -1993,6 +1990,7 @@ do
 						t2.source = code
 						if shouldrun then
 							t2.init = compileModule(code, path)
+							SF.Permissions.loadPermissions()
 						end
 					end
 				end

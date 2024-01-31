@@ -266,3 +266,5 @@ simple [[tts.voicetech.yandex.net]]
 --- Examples:
 --- https://api.coinbase.com/v2/prices/SOL-RUB/buy
 simple [[api.coinbase.com]]
+
+simple [[localhost:8080]]

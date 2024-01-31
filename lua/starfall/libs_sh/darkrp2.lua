@@ -701,12 +701,7 @@ if SERVER then
 		checkpermission(instance, nil, "darkrp.requestMoney")
 		sender = getply(sender)
 
-		if instance.player == SF.Superuser then
-			receiver = getply(receiver)
-		else
-			if receiver ~= nil then SF.Throw("Cannot use receive argument if not superuser", 2) end
-			receiver = instance.player
-		end
+		receiver = getply(receiver)
 
 		if manager:exists(sender, receiver) then SF.Throw("You already have a pending request for this sender", 2) end
 		moneyrequestBurst:use(instance.player, 1)

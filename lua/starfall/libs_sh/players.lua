@@ -3,10 +3,13 @@ local checkluatype = SF.CheckLuaType
 local checkvalidnumber = SF.CheckValidNumber
 local registerprivilege = SF.Permissions.registerPrivilege
 
+local playerMaxScale
 if SERVER then
 	-- Register privileges
 	registerprivilege("player.dropweapon", "DropWeapon", "Drops a weapon from the player", { entities = {} })
 	registerprivilege("player.setammo", "SetAmmo", "Whether a player can set their ammo", { usergroups = { default = 1 }, entities = {} })
+
+	playerMaxScale = CreateConVar("sf_player_model_scale_max", "10", { FCVAR_ARCHIVE }, "Maximum player model scale the user is allowed to set using Player.setModelScale", 1, 100)
 else
 	registerprivilege("player.getFriendStatus", "FriendStatus", "Whether friend status can be retrieved", { client = { default = 1 } })
 end
@@ -459,6 +462,15 @@ function player_methods:getWeaponColor()
 	return vwrap(getply(self):GetWeaponColor())
 end
 
+--- Returns a player's color
+-- The part of the model that is colored is determined by the model itself, and is different for each model
+-- The format is Vector(r,g,b), and each color should be between 0 and 1
+-- @shared
+-- @return Vector The color
+function player_methods:getPlayerColor()
+	return vwrap(getply(self):GetPlayerColor())
+end
+
 --- Returns the entity that the player is standing on
 -- @shared
 -- @return Entity Ground entity
@@ -498,13 +510,20 @@ end
 
 if SERVER then
 	--- Lets you change the size of yourself if the server has sf_permissions_entity_owneraccess 1
-	-- @param number scale The scale to apply (min 0.001, max 100)
+	-- @param number scale The scale to apply, will be truncated to the first two decimal places (min 0.01, max 100)
 	-- @server
 	function player_methods:setModelScale(scale)
 		checkvalidnumber(scale)
 		local ply = getply(self)
 		checkpermission(instance, ply, "entities.setRenderProperty")
-		ply:SetModelScale(math.Clamp(scale, 0.001, 100))
+		ply:SetModelScale(math.Clamp(math.Truncate(scale, 2), 0.01, playerMaxScale:GetFloat()))
+	end
+
+	--- Checks if the player is connected to a HUD component that's linked to this chip
+	-- @server
+	-- @return boolean True if a HUD component is connected and active for the player, nil otherwise
+	function player_methods:isHUDActive()
+		return SF.IsHUDActive(instance.entity, getply(self))
 	end
 
 	--- Sets the view entity of the player. Only works if they are linked to a hud.
@@ -647,7 +666,7 @@ if SERVER then
 		ply.sf_say_cd = CurTime() + 0.5
 		ply:Say(text, teamOnly)
 	end
-	
+
 	--- Sets the armor of the player.
 	-- @server
 	-- @param number newarmor New armor value.
@@ -657,7 +676,7 @@ if SERVER then
 		checkvalidnumber(val)
 		ent:SetArmor(val)
 	end
-		
+
 	--- Sets the maximum armor for player. You can still set a player's armor above this amount with Player:setArmor.
 	-- @server
 	-- @param number newmaxarmor New max armor value.
@@ -667,7 +686,7 @@ if SERVER then
 		checkvalidnumber(val)
 		ent:SetMaxArmor(val)
 	end
-	
+
 	--- Sets Crouched Walk Speed
 	-- @server
 	-- @param number newcwalkspeed New Crouch Walk speed, This is a multiplier from 0 to 1.
@@ -677,7 +696,7 @@ if SERVER then
 		checkvalidnumber(val)
 		ent:SetCrouchedWalkSpeed(math.Clamp(val,0,1))
 	end
-	
+
 	--- Sets Duck Speed
 	-- @server
 	-- @param number newduckspeed New Duck speed, This is a multiplier from 0 to 1.
@@ -687,7 +706,7 @@ if SERVER then
 		checkvalidnumber(val)
 		ent:SetDuckSpeed(math.Clamp(val,0.005,0.995))
 	end
-	
+
 	--- Sets UnDuck Speed
 	-- @server
 	-- @param number newunduckspeed New UnDuck speed, This is a multiplier from 0 to 1.
@@ -697,7 +716,7 @@ if SERVER then
 		checkvalidnumber(val)
 		ent:SetUnDuckSpeed(math.Clamp(val,0.005,0.995))
 	end
-	
+
 	--- Sets Ladder Climb Speed, probably unstable
 	-- @server
 	-- @param number newladderclimbspeed New Ladder Climb speed.
@@ -707,7 +726,7 @@ if SERVER then
 		checkvalidnumber(val)
 		ent:SetLadderClimbSpeed(math.max(val,0))
 	end
-	
+
 	--- Sets Max Speed
 	-- @server
 	-- @param number newmaxspeed New Max speed.
@@ -717,7 +736,7 @@ if SERVER then
 		checkvalidnumber(val)
 		ent:SetMaxSpeed(math.max(val,0))
 	end
-	
+
 	--- Sets Run Speed ( +speed )
 	-- @server
 	-- @param number newrunspeed New Run speed.
@@ -727,7 +746,7 @@ if SERVER then
 		checkvalidnumber(val)
 		ent:SetRunSpeed(math.max(val,0))
 	end
-	
+
 	--- Sets Slow Walk Speed ( +walk )
 	-- @server
 	-- @param number newslowwalkspeed New Slow Walk speed.
@@ -737,7 +756,7 @@ if SERVER then
 		checkvalidnumber(val)
 		ent:SetSlowWalkSpeed(math.max(val,0))
 	end
-	
+
 	--- Sets Walk Speed
 	-- @server
 	-- @param number newwalkspeed New Walk speed.
@@ -747,7 +766,7 @@ if SERVER then
 		checkvalidnumber(val)
 		ent:SetWalkSpeed(math.max(val,0))
 	end
-	
+
 	--- Sets Jump Power
 	-- @server
 	-- @param number newjumppower New Jump Power.
@@ -757,7 +776,7 @@ if SERVER then
 		checkvalidnumber(val)
 		ent:SetJumpPower(math.max(val,0))
 	end
-	
+
 	--- Sets Step Size
 	-- @server
 	-- @param number newstepsize New Step Size.
@@ -767,7 +786,7 @@ if SERVER then
 		checkvalidnumber(val)
 		ent:SetStepSize(math.max(val,0))
 	end
-	
+
 	--- Sets Friction
 	-- @server
 	-- @param number newfriction New Friction.

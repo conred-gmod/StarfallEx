@@ -4,30 +4,13 @@ DEFINE_BASECLASS("base_gmodentity")
 
 ENT.RenderGroup = RENDERGROUP_BOTH
 
+local IsValid = FindMetaTable("Entity").IsValid
+
 function ENT:Initialize()
 	self.name = "Generic ( No-Name )"
 	self.OverlayFade = 0
 	self.ActiveHuds = {}
 	self.reuploadOnReload = false
-end
-
-function ENT:OnRemove()
-	if self.instance then
-		self.instance:runScriptHook("removed")
-	end
-
-	-- This is required because snapshots can cause OnRemove to run even if it wasn't removed.
-	local instance = self.instance
-	if instance then
-		timer.Simple(0, function()
-			if not self:IsValid() then
-				instance:deinitialize()
-			end
-		end)
-	end
-
-	-- This should remove the hook if it existed
-	self:SetReuploadOnReload(false)
 end
 
 function ENT:GetOverlayText()
@@ -131,7 +114,7 @@ else
 end
 
 hook.Add("StarfallError", "StarfallErrorReport", function(_, owner, client, main_file, message, traceback, should_notify)
-	if not (owner and owner:IsValid()) then return end
+	if not IsValid(owner) then return end
 	local local_player = LocalPlayer()
 	if owner == local_player then
 		if not client or client == owner then
@@ -156,34 +139,46 @@ end)
 net.Receive("starfall_processor_download", function(len)
 	net.ReadStarfall(nil, function(ok, sfdata)
 		if ok then
-			SF.WaitForConditions(function(timedout)
-				local proc, owner = Entity(sfdata.procindex), Entity(sfdata.ownerindex)
-				if SF.EntIsReady(proc) and proc:GetClass()=="starfall_processor" and SF.EntIsReady(owner) and (owner:IsPlayer() or owner:IsWorld()) then
-					sfdata.owner = owner
-					proc:Destroy()
-					proc:SetupFiles(sfdata)
-					return true
-				end
-			end, 10)
+			local proc, owner
+			local function setup()
+				sfdata.proc = proc
+				sfdata.owner = owner
+				proc:Destroy()
+				proc:SetupFiles(sfdata)
+			end
+
+			if sfdata.ownerindex == 0 then
+				owner = game.GetWorld()
+			else
+				SF.WaitForEntity(sfdata.ownerindex, sfdata.ownercreateindex, function(e)
+					owner = e if proc and owner then setup() end
+				end)
+			end
+			SF.WaitForEntity(sfdata.procindex, sfdata.proccreateindex, function(e)
+				proc = e if proc and owner then setup() end
+			end)
 		end
 	end)
 end)
 
 net.Receive("starfall_processor_link", function()
-	local componenti = net.ReadUInt(16)
-	local proci = net.ReadUInt(16)
-	SF.WaitForConditions(function(timedout)
-		local component, proc = Entity(componenti), Entity(proci)
-		if SF.EntIsReady(component) and SF.EntIsReady(proc) then
-			SF.LinkEnt(component, proc)
-			return true
-		end
-	end, 10)
+	local componenti, componentci = net.ReadUInt(16), net.ReadUInt(32)
+	local proci, procci = net.ReadUInt(16), net.ReadUInt(32)
+	local component, proc
+
+	SF.WaitForEntity(componenti, componentci, function(e)
+		component = e if component and (proc or proci==0) then SF.LinkEnt(component, proc) end
+	end)
+	if proci~=0 then
+		SF.WaitForEntity(proci, procci, function(e)
+			proc = e if component and proc then SF.LinkEnt(component, proc) end
+		end)
+	end
 end)
 
 net.Receive("starfall_processor_kill", function()
 	local target = net.ReadEntity()
-	if target:IsValid() and target:GetClass()=="starfall_processor" then
+	if IsValid(target) and target:GetClass()=="starfall_processor" then
 		target:Error({message = "Killed by admin", traceback = ""})
 	end
 end)
@@ -192,14 +187,14 @@ net.Receive("starfall_processor_used", function(len)
 	local chip = net.ReadEntity()
 	local used = net.ReadEntity()
 	local activator = net.ReadEntity()
-	if not (chip and chip:IsValid()) then return end
-	if not (used and used:IsValid()) then return end
+	if not IsValid(chip) then return end
+	if not IsValid(used) then return end
 	local instance = chip.instance
 	if not instance then return end
 
 	instance:runScriptHook("starfallused", instance.WrapObject( activator ), instance.WrapObject( used ))
 
-	if activator == LocalPlayer() and instance.player ~= SF.Superuser and instance.permissionRequest and instance.permissionRequest.showOnUse and not SF.Permissions.permissionRequestSatisfied( instance ) and not IsValid(SF.permPanel) then
+	if activator == LocalPlayer() and instance.player ~= SF.Superuser and instance.permissionRequest and instance.permissionRequest.showOnUse and not SF.Permissions.permissionRequestSatisfied( instance ) and not (SF.permPanel and SF.permPanel:IsValid()) then
 		local pnl = vgui.Create("SFChipPermissions")
 		if pnl then
 			pnl:OpenForChip( chip )

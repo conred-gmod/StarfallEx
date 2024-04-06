@@ -16,6 +16,7 @@ ENT.States          = {
 	None = 3,
 }
 
+local IsValid = FindMetaTable("Entity").IsValid
 
 function ENT:Compile()
 	if self.instance then
@@ -44,7 +45,7 @@ function ENT:Compile()
 	self.instance = instance
 	instance.runOnError = function(err)
 		-- Have to make sure it's valid because the chip can be deleted before deinitialization and trigger errors
-		if self:IsValid() then
+		if IsValid(self) then
 			self:Error(err)
 		end
 	end
@@ -78,14 +79,20 @@ function ENT:Compile()
 end
 
 function ENT:Destroy()
-	if self.instance then
-		self.instance:runScriptHook("removed")
-		--removed hook can cause instance to become nil
-		if self.instance then
-			self.instance:deinitialize()
-			self.instance = nil
-		end
+	local instance = self.instance
+	if instance then
+		instance:runScriptHook("removed")
+		instance:deinitialize()
+		self.instance = nil
 	end
+end
+
+function ENT:OnRemove(fullsnapshot)
+	if fullsnapshot then return end
+	self:Destroy()
+
+	-- This should remove the hook if it existed
+	if CLIENT then self:SetReuploadOnReload(false) end
 end
 
 function ENT:SetupFiles(sfdata)
@@ -138,7 +145,7 @@ function ENT:Error(err)
 		msg = string.sub(msg, 1, newline - 1)
 	end
 
-	hook.Run("StarfallError", self, self.owner, CLIENT and LocalPlayer() or false, self.sfdata.mainfile, msg, traceback)
+	hook.Run("StarfallError", self, self.owner, CLIENT and LocalPlayer() or false, self.sfdata and self.sfdata.mainfile or "", msg, traceback)
 	SF.SendError(self, msg, traceback)
 
 	if self.instance then
@@ -193,7 +200,7 @@ properties.Add( "starfall", {
 	Order = 999,
 	MenuIcon = "icon16/wrench.png", -- We should create an icon
 	Filter = function( self, ent, ply )
-		if not (ent and ent:IsValid()) then return false end
+		if not IsValid(ent) then return false end
 		if not gamemode.Call( "CanProperty", ply, "starfall", ent ) then return false end
 		return ent.Starfall or ent.link and ent.link.Starfall
 	end,
@@ -227,7 +234,7 @@ net.Receive("starfall_hud_set_enabled" , function()
 	local chip = net.ReadEntity()
 	local activator = net.ReadEntity()
 	local enabled = net.ReadBool()
-	if ply:IsValid() and ply:IsPlayer() and chip:IsValid() and chip.ActiveHuds then
+	if IsValid(ply) and ply:IsPlayer() and IsValid(chip) and chip.ActiveHuds then
 		SF.EnableHud(ply, chip, activator, enabled, true)
 	end
 end)
@@ -240,18 +247,33 @@ local function runHudHooks(ply, chip, activator, enabled)
 	end
 end
 
+local function isVehicleOrHudControlsLocked(activator)
+	if activator.locksControls then
+		return activator
+	end
+	activator = SF.HudVehicleLinks[activator]
+	if activator then
+		for v in pairs(activator) do
+			if v.locksControls then
+				return v
+			end
+		end
+	end
+end
+
 if SERVER then
 	function SF.EnableHud(ply, chip, activator, enabled, dontsync)
 		local huds = chip.ActiveHuds
-		if activator and activator:IsValid() then
+		if IsValid(activator) then
 			local n = "SF_HUD"..ply:EntIndex()..":"..activator:EntIndex()
+			local lockController = isVehicleOrHudControlsLocked(activator)
 			local function disconnect(sync)
 				huds[ply] = nil
 				hook.Remove("EntityRemoved", n)
 				ply:SetViewEntity()
-				if activator.locksControls and activator.link and activator.link:IsValid() then
+				if IsValid(lockController) and IsValid(lockController.link) then
 					net.Start("starfall_lock_control")
-						net.WriteEntity(activator.link)
+						net.WriteEntity(lockController.link)
 						net.WriteBool(false)
 					net.Send(ply)
 				end
@@ -263,9 +285,9 @@ if SERVER then
 			if enabled then
 				huds[ply] = true
 				hook.Add("EntityRemoved",n,function(e) if e==ply or e==activator then disconnect(true) end end)
-				if activator.locksControls and activator.link and activator.link:IsValid() then
+				if IsValid(lockController) and IsValid(lockController.link) then
 					net.Start("starfall_lock_control")
-						net.WriteEntity(activator.link)
+						net.WriteEntity(lockController.link)
 						net.WriteBool(true)
 					net.Send(ply)
 				end
@@ -287,7 +309,7 @@ else
 		chip.ActiveHuds[ply] = enabled
 
 		if changed then
-			local enabledBy = chip.owner and chip.owner:IsValid() and (" by "..chip.owner:Nick()) or ""
+			local enabledBy = IsValid(chip.owner) and (" by "..chip.owner:Nick()) or ""
 			if enabled then
 				if (Hint_FirstPrint) then
 					LocalPlayer():ChatPrint("Starfall HUD enabled"..enabledBy..". NOTE: Type 'sf_hud_unlink' in the console to disconnect yourself from all HUDs.")
@@ -324,13 +346,13 @@ function SF.LinkEnt(self, ent, transmit)
 		local oldlink = self.link
 		self.link = ent
 
-		if oldlink and oldlink:IsValid() then
+		if IsValid(oldlink) then
 			local instance = oldlink.instance
 			if instance then
 				instance:runScriptHook("componentunlinked", instance.WrapObject(self))
 			end
 		end
-		if ent and ent:IsValid() then
+		if IsValid(ent) then
 			local instance = ent.instance
 			if instance then
 				instance:runScriptHook("componentlinked", instance.WrapObject(self))
@@ -340,7 +362,14 @@ function SF.LinkEnt(self, ent, transmit)
 	if SERVER and (changed or transmit) then
 		net.Start("starfall_processor_link")
 		net.WriteUInt(self:EntIndex(), 16)
-		net.WriteUInt(ent and ent:IsValid() and ent:EntIndex() or 0, 16)
+		net.WriteUInt(self:GetCreationID(), 32)
+		if IsValid(ent) then
+			net.WriteUInt(ent:EntIndex(), 16)
+			net.WriteUInt(ent:GetCreationID(), 32)
+		else
+			net.WriteUInt(0, 16)
+			net.WriteUInt(0, 32)
+		end
 		if transmit then net.Send(transmit) else net.Broadcast() end
 	end
 end

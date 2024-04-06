@@ -270,7 +270,10 @@ else
 	-- @param string text The message
 	-- @param boolean team Whether the message was team only
 	-- @param boolean isdead Whether the message was send from a dead player
-	add("OnPlayerChat", "playerchat")
+	-- @return boolean Return true to hide the message. Can only be done for the owner of the chip
+	add("OnPlayerChat", "playerchat", nil, function(instance, ret)
+		if ret[1] and instance.player == LocalPlayer() and ret[2] then return true end
+	end)
 
 	--- Called when the player's chat box text changes.
 	-- Requires the 'input' permission.
@@ -440,6 +443,7 @@ end)
 -- @class hook
 -- @shared
 -- @param Entity ent Entity being removed
+-- @param boolean isSnapshot If clientside, will be true if the entity isn't actually removed
 add("EntityRemoved")
 
 --- Called when an entity is broken
@@ -467,6 +471,18 @@ end, function(instance, ret, ent, data)
 		return true
 	end
 end, true)
+
+--- Called after a bullet is fired and it's trace has been calculated
+-- @name PostEntityFireBullets
+-- @class hook
+-- @shared
+-- @param Entity ent The entity that fired the bullet
+-- @param table data A table containing Trace (See http://wiki.facepunch.com/gmod/Structures/TraceResult) and AmmoType, Tracer, Damage, Force, Attacker, TracerName (see http://wiki.facepunch.com/gmod/Structures/Bullet)
+add("PostEntityFireBullets", nil, function(instance, ent, data)
+	local ret = SF.StructWrapper(instance, data, "Bullet")
+	ret.Trace = SF.StructWrapper(instance, data.Trace, "TraceResult")
+	return true, {instance.WrapObject(ent), ret}
+end)
 
 --- Called whenever a sound has been played. This will not be called clientside if the server played the sound without the client also calling Entity:EmitSound.
 -- @name EntityEmitSound

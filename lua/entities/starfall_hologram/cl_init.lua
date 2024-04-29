@@ -6,6 +6,7 @@ ENT.DefaultMaterial = Material( "hunter/myplastic" )
 ENT.Material = ENT.DefaultMaterial
 
 local VECTOR_PLAYER_COLOR_DISABLED = Vector(-1, -1, -1)
+local IsValid = FindMetaTable("Entity").IsValid
 
 function ENT:Initialize()
 	self.clips = {}
@@ -76,7 +77,7 @@ function ENT:Draw(flags)
 		prevClip = render.EnableClipping(true)
 		for _, clip in pairs(selfTbl.clips) do
 			local clipent = clip.entity
-			if clipent and clipent:IsValid() then
+			if IsValid(clipent) then
 				local norm = clipent:LocalToWorld(clip.normal) - clipent:GetPos()
 				render.PushCustomClipPlane(norm, norm:Dot(clipent:LocalToWorld(clip.origin)))
 			else
@@ -126,9 +127,10 @@ end
 
 net.Receive("starfall_hologram_clips", function()
 	local index = net.ReadUInt(16)
+	local creationindex = net.ReadUInt(32)
 	local clipdata = SF.StringStream(net.ReadData(net.ReadUInt(32)))
 
-	local function applyHologram(self)
+	local function applyHologramClips(self)
 		if self and self.IsSFHologram then
 			local clips = {}
 			for i=1, math.Round(clipdata:size()/34) do
@@ -139,7 +141,8 @@ net.Receive("starfall_hologram_clips", function()
 				}
 				local entind = clipdata:readUInt16()
 				if entind~=0 then
-					SF.WaitForEntity(entind, function(e) clip.entity = e end)
+					local creationid = clipdata:readUInt32()
+					SF.WaitForEntity(entind, creationid, function(e) clip.entity = e end)
 				end
 				clips[index] = clip
 			end
@@ -147,7 +150,7 @@ net.Receive("starfall_hologram_clips", function()
 		end
 	end
 
-	SF.WaitForEntity(index, applyHologram)
+	SF.WaitForEntity(index, creationindex, applyHologramClips)
 end)
 
 -- For when the hologram matrix gets cleared
@@ -162,17 +165,17 @@ hook.Add("NetworkEntityCreated", "starfall_hologram_rescale", function(holo)
 end)
 
 local function ShowHologramOwners()
-	for _, ent in pairs(ents.GetAll()) do
+	for _, ent in ents.Iterator() do
 		if ent.IsSFHologram then
 			local name = "No Owner"
 			local steamID = ""
 			local ply = SF.Permissions.getOwner(ent)
-			if ply and ply:IsValid() then
+			if IsValid(ply) then
 				name = ply:Name()
 				steamID = ply:SteamID()
 			else
 				ply = ent.SFHoloOwner
-				if ply and ply:IsValid() then
+				if IsValid(ply) then
 					name = ply:Name()
 					steamID = ply:SteamID()
 				end

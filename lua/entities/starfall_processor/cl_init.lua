@@ -5,6 +5,7 @@ DEFINE_BASECLASS("base_gmodentity")
 ENT.RenderGroup = RENDERGROUP_BOTH
 
 local IsValid = FindMetaTable("Entity").IsValid
+local IsWorld = FindMetaTable("Entity").IsWorld
 
 function ENT:Initialize()
 	self.name = "Generic ( No-Name )"
@@ -141,22 +142,19 @@ net.Receive("starfall_processor_download", function(len)
 		if ok then
 			local proc, owner
 			local function setup()
+				if not IsValid(proc) then return end
+				if not (IsValid(owner) or IsWorld(owner)) then return end
 				sfdata.proc = proc
 				sfdata.owner = owner
-				proc:Destroy()
 				proc:SetupFiles(sfdata)
 			end
 
 			if sfdata.ownerindex == 0 then
 				owner = game.GetWorld()
 			else
-				SF.WaitForEntity(sfdata.ownerindex, sfdata.ownercreateindex, function(e)
-					owner = e if proc and owner then setup() end
-				end)
+				SF.WaitForEntity(sfdata.ownerindex, sfdata.ownercreateindex, function(e) owner = e setup() end)
 			end
-			SF.WaitForEntity(sfdata.procindex, sfdata.proccreateindex, function(e)
-				proc = e if proc and owner then setup() end
-			end)
+			SF.WaitForEntity(sfdata.procindex, sfdata.proccreateindex, function(e) proc = e setup() end)
 		end
 	end)
 end)
@@ -165,14 +163,15 @@ net.Receive("starfall_processor_link", function()
 	local componenti, componentci = net.ReadUInt(16), net.ReadUInt(32)
 	local proci, procci = net.ReadUInt(16), net.ReadUInt(32)
 	local component, proc
+	local function link()
+		if not IsValid(component) then return end
+		if not (IsValid(proc) or proci==0) then return end
+		SF.LinkEnt(component, proc)
+	end
 
-	SF.WaitForEntity(componenti, componentci, function(e)
-		component = e if component and (proc or proci==0) then SF.LinkEnt(component, proc) end
-	end)
+	SF.WaitForEntity(componenti, componentci, function(e) component = e link() end)
 	if proci~=0 then
-		SF.WaitForEntity(proci, procci, function(e)
-			proc = e if component and proc then SF.LinkEnt(component, proc) end
-		end)
+		SF.WaitForEntity(proci, procci, function(e) proc = e link() end)
 	end
 end)
 
@@ -233,11 +232,9 @@ end, "Terminates a user's starfall chips clientside.", true)
 ---Terminates a user's starfall chips. Admin only
 SF.SteamIDConcommand("sf_kill", function( executor, ply )
 	if not executor:IsAdmin() then return end
-	if SF.playerInstances[ply] then
-		for instance, _ in pairs( SF.playerInstances[ply] ) do
-			net.Start( "starfall_processor_kill" )
-			net.WriteEntity( instance.entity )
-			net.SendToServer()
-		end
+	for instance, _ in pairs( SF.playerInstances[ply] ) do
+		net.Start( "starfall_processor_kill" )
+		net.WriteEntity( instance.entity )
+		net.SendToServer()
 	end
 end, "Admin Only. Terminate a user's starfall chips.", true )

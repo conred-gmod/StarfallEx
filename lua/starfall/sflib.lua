@@ -170,7 +170,7 @@ SF.BurstObject = {
 			return ret
 		end,
 		use = function(self, ply, amount)
-			if IsValid(ply) or ply==SF.Superuser then
+			if ply==SF.Superuser or IsValid(ply) then
 				local obj = self:get(ply)
 				local new = self:calc(obj) - amount
 				if new < 0 and ply~=SF.Superuser then
@@ -182,7 +182,7 @@ SF.BurstObject = {
 			end
 		end,
 		check = function(self, ply)
-			if IsValid(ply) or ply==SF.Superuser then
+			if ply==SF.Superuser or IsValid(ply) then
 				local obj = self:get(ply)
 				obj.val = self:calc(obj)
 				return obj.val
@@ -298,9 +298,12 @@ setmetatable(SF.LimitObject, SF.LimitObject)
 --- Returns a class that handles entities spawned by an instance
 SF.EntManager = {
 	__index = {
-		register = function(self, instance, ent)
+		register = function(self, instance, ent, onremove)
 			if not self.nocallonremove then
-				local function sf_on_remove() self:onremove(instance, ent) end
+				local function sf_on_remove()
+					self:onremove(instance, ent)
+					if onremove then onremove() end
+				end
 				ent.sf_on_remove = sf_on_remove
 				SF.CallOnRemove(ent, "entmanager", sf_on_remove)
 			end
@@ -421,6 +424,61 @@ SF.StringRestrictor = {
 	end
 }
 setmetatable(SF.StringRestrictor, SF.StringRestrictor)
+
+SF.NetValidator = {
+	Players = {},
+	__index = {
+		receive = function(self)
+			if net.ReadDouble() == self.validation then
+				self.successes = self.successes + 1
+				if self.successes == 5 then
+					self.success()
+					self:remove()
+				end
+			end
+		end,
+		tick = function(self)
+			if IsValid(self.player) then
+				self.validation = math.random()
+				net.Start("starfall_net_validate")
+				net.WriteDouble(self.validation)
+				net.Send(self.player)
+			else
+				self:remove()
+			end
+		end,
+		remove = function(self)
+			SF.NetValidator.Players[self.player] = nil
+			timer.Remove(self.timername)
+		end
+	},
+	__call = function(p, ply, success)
+		local t = setmetatable({
+			player = ply,
+			timername = "sf_net_validate"..ply:EntIndex(),
+			successes = 0,
+			success = success,
+		}, p)
+		SF.NetValidator.Players[ply] = t
+		timer.Create(t.timername, 2, 0, function() t:tick() end)
+	end
+}
+setmetatable(SF.NetValidator, SF.NetValidator)
+
+if SERVER then
+	util.AddNetworkString("starfall_net_validate")
+	net.Receive("starfall_net_validate", function(len, ply)
+		if SF.NetValidator.Players[ply] then
+			SF.NetValidator.Players[ply]:receive()
+		end
+	end)
+else
+	net.Receive("starfall_net_validate", function()
+		net.Start("starfall_net_validate")
+		net.WriteDouble(net.ReadDouble())
+		net.SendToServer()
+	end)
+end
 
 local function steamIdToConsoleSafeName(steamid)
 	local ply = player.GetBySteamID(steamid)
@@ -1094,17 +1152,23 @@ end
 
 function SF.EntIsReady(ent)
 	if ent:IsWorld() then return true end
-	if IsValid(ent) then
-		-- https://github.com/Facepunch/garrysmod-issues/issues/3127
-		local class = ent:GetClass()
-		if class=="player" then
-			return ent:IsPlayer()
-		else
-			local n = next(baseclass.Get(class))
-			return n==nil or ent[n]~=nil
-		end
+	if not IsValid(ent) then return false end
+
+	-- https://github.com/Facepunch/garrysmod-issues/issues/3127
+	local class = ent:GetClass()
+	if class=="player" then
+		return ent:IsPlayer()
+	elseif class=="starfall_processor" then
+		return ent.SetupFiles~=nil
+	elseif class=="starfall_hologram" then
+		return ent.SetClip~=nil
+	elseif class=="starfall_prop" then
+		return ent.BuildPhysics~=nil
+	elseif class=="starfall_screen" or class=="starfall_hud" then
+		return ent:IsScripted()
+	else
+		return true
 	end
-	return false
 end
 
 local waitingConditions = {}
@@ -1136,30 +1200,22 @@ function SF.WaitForEntity(index, creationIndex, callback)
 	SF.WaitForConditions(function()
 		local ent=Entity(index)
 		if SF.EntIsReady(ent) and ent:GetCreationID()==creationIndex then
-			callback(ent)
+			ProtectedCall(callback, ent)
 			return true
 		end
 	end, callback, 10)
 end
 
+
 local playerinithooks = {}
 hook.Add("PlayerInitialSpawn","SF_PlayerInitialize",function(ply)
-	local n = "SF_WaitForPlayerInit"..ply:EntIndex()
-	hook.Add("SetupMove", n, function(ply2, mv, cmd)
-		if IsValid(ply) then
-			if ply == ply2 and not cmd:IsForced() then
-				for _, v in ipairs(playerinithooks) do v(ply) end
-				hook.Remove("SetupMove", n)
-			end
-		else
-			hook.Remove("SetupMove", n)
-		end
+	SF.NetValidator(ply, function()
+		for _, v in ipairs(playerinithooks) do v(ply) end
 	end)
 end)
 function SF.WaitForPlayerInit(func)
 	playerinithooks[#playerinithooks+1] = func
 end
-
 
 -- Table networking
 do
@@ -1536,10 +1592,10 @@ else
 
 	function SF.HTTPNotify(ply, url)
 		local plyStr
-		if IsValid(ply) then
-			plyStr = ply:Nick() .. " [" .. ply:SteamID() .. "]"
-		elseif ply == SF.Superuser then
+		if ply == SF.Superuser then
 			plyStr = "Superuser"
+		elseif IsValid(ply) then
+			plyStr = ply:Nick() .. " [" .. ply:SteamID() .. "]"
 		else
 			plyStr = "Invalid user"
 		end

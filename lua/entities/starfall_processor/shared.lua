@@ -19,10 +19,7 @@ ENT.States          = {
 local IsValid = FindMetaTable("Entity").IsValid
 
 function ENT:Compile()
-	if self.instance then
-		self:Destroy()
-	end
-
+	self:Destroy()
 	self.error = nil
 
 	if not (self.sfdata and self.sfdata.files and self.sfdata.files[self.sfdata.mainfile]) then return end
@@ -96,6 +93,8 @@ function ENT:OnRemove(fullsnapshot)
 end
 
 function ENT:SetupFiles(sfdata)
+	self:Destroy()
+
 	self.sfdata = sfdata
 	self.owner = sfdata.owner
 	sfdata.proc = self

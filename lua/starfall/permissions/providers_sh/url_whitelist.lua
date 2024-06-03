@@ -267,4 +267,8 @@ simple [[tts.voicetech.yandex.net]]
 --- https://api.coinbase.com/v2/prices/SOL-RUB/buy
 simple [[api.coinbase.com]]
 
-simple [[localhost:8080]]
+
+-- Youtube Converter API
+--- Examples:
+---  https://youtube.michaelbelgium.me/storage/5zrORMBb0-8.mp3
+simple [[youtube.michaelbelgium.me]]

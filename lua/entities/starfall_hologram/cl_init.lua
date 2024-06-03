@@ -1,7 +1,6 @@
 include("shared.lua")
 ENT.RenderGroup = RENDERGROUP_OPAQUE
 
-ENT.IsHologram = true
 ENT.DefaultMaterial = Material( "hunter/myplastic" )
 ENT.Material = ENT.DefaultMaterial
 
@@ -133,7 +132,7 @@ net.Receive("starfall_hologram_clips", function()
 	local function applyHologramClips(self)
 		if self and self.IsSFHologram then
 			local clips = {}
-			for i=1, math.Round(clipdata:size()/34) do
+			while clipdata:tell() <= clipdata:size() do
 				local index = clipdata:readDouble()
 				local clip = {
 					normal = Vector(clipdata:readFloat(), clipdata:readFloat(), clipdata:readFloat()),

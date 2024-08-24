@@ -78,7 +78,7 @@ instance:AddHook("deinitialize", function()
 end)
 
 local function getholo(self)
-	local ent = unwrap(self)
+	local ent = hologram_meta.sf2sensitive[self]
 	if IsValid(ent) then
 		return ent
 	else
@@ -253,6 +253,7 @@ else
 		else
 			holo.filter_mag = nil
 		end
+		holo.renderstack:makeDirty()
 	end
 
 	--- Sets the texture filtering function when viewing a far texture
@@ -269,6 +270,7 @@ else
 		else
 			holo.filter_min = nil
 		end
+		holo.renderstack:makeDirty()
 	end
 
 	--- Sets a hologram entity's rendermatrix
@@ -474,6 +476,7 @@ function hologram_methods:setAnimation(animation, frame, rate)
 	if animation~=nil then
 		holo:ResetSequence(animation)
 		holo.AutomaticFrameAdvance = animation~=-1
+		if CLIENT then holo.renderstack:makeDirty() end
 	end
 	if frame ~= nil then
 		checkluatype(frame, TYPE_NUMBER)
@@ -483,6 +486,18 @@ function hologram_methods:setAnimation(animation, frame, rate)
 		checkluatype(rate, TYPE_NUMBER)
 		holo:SetPlaybackRate(rate)
 	end
+end
+
+--- Set the cull mode for a hologram.
+-- @shared
+-- @param number mode Cull mode. 0 for counter clock wise, 1 for clock wise
+function hologram_methods:setCullMode(mode)
+	checkluatype(mode, TYPE_NUMBER)
+
+	local holo = getholo(self)
+	checkpermission(instance, holo, "entities.setRenderProperty")
+
+	holo:SetCullMode(mode==1)
 end
 
 --- Applies engine effects to the hologram

@@ -228,6 +228,11 @@ builtins_library.CLIENT = CLIENT
 -- @class field
 builtins_library.SERVER = SERVER
 
+--- Constant that denotes wether the code is executed on the owner's client
+-- @name builtins_library.OWNER
+-- @class field
+builtins_library.OWNER = CLIENT and instance.player == LocalPlayer()
+
 --- Returns if this is the first time this hook was predicted.
 -- @name builtins_library.isFirstTimePredicted
 -- @class function
@@ -398,7 +403,7 @@ os_library.clock = os.clock
 --- Returns the date/time as a formatted string or in a table.
 -- See https://wiki.facepunch.com/gmod/Structures/DateData for the table structure
 -- @class function
--- @param string format The format string. If starts with an '!', it will use UTC timezone rather than the local timezone
+-- @param string? format The format string. If starts with an '!', it will use UTC timezone rather than the local timezone
 -- @param number? time Time to use for the format. Default os.time()
 -- @return string|table If format is equal to '*t' or '!*t' then it will return a table with DateData structure, otherwise a string
 os_library.date = function(format, time)
@@ -593,15 +598,46 @@ if SERVER then
 		printTableX(tbl, 0, { [tbl] = true })
 	end
 
+	--- Checks how much of the serverside print burst limit is remaining
+	--- The cost of each print is roughly equivalent to totalStringLength + 6*numColors + 2*numStrings
+	-- @server
+	-- @return number Size of the remaining print burst in bytes
+	function builtins_library.printSizeLeft()
+		return printBurst:check(instance.player)
+	end
+
+	--- Returns the refill rate of the serverside print burst limit
+	-- @server
+	-- @return number Number of bytes per second the print burst limit refills
+	function builtins_library.printRate()
+		return printBurst.rate
+	end
+
 	--- Execute a console command
 	-- @shared
 	-- @param string cmd Command to execute
 	function builtins_library.concmd(cmd)
 		checkluatype(cmd, TYPE_STRING)
 		if #cmd > 512 then SF.Throw("Console command is too long!", 2) end
+		if IsConCommandBlocked(cmd) then SF.Throw("Console command is blocked!", 2) end
 		checkpermission(instance, nil, "console.command")
 		concmdBurst:use(instance.player, #cmd)
 		instance.player:ConCommand(cmd)
+	end
+
+	--- Checks how many concmds are remaining in the serverside burst limit
+	-- @server
+	-- @return number Number of concmds able to be ran serverside
+	function builtins_library.concmdLeft()
+		if not haspermission(instance,  nil, "console.command") then return 0 end
+		return concmdBurst:check(instance.player)
+	end
+
+	--- Returns how many concmds per second the user can run serverside
+	-- @server
+	-- @return number Number of concmds per second the user can run serverside
+	function builtins_library.concmdRate()
+		return concmdBurst.rate
 	end
 
 	--- Sets the chip's userdata that the duplicator tool saves. max 1MiB; can be changed with convar sf_userdata_max
@@ -705,6 +741,7 @@ else
 	function builtins_library.concmd(cmd)
 		checkluatype(cmd, TYPE_STRING)
 		if instance.player ~= LocalPlayer() then SF.Throw("Can't run concmd on other players!", 2) end
+		if IsConCommandBlocked(cmd) then SF.Throw("Console command is blocked!", 2) end
 		LocalPlayer():ConCommand(cmd)
 	end
 
@@ -789,7 +826,7 @@ end
 --- Runs all included scripts in a directory and caches the results.
 -- The path must be an actual path, including the file extension and using slashes for directory separators instead of periods.
 -- @param string path The directory to include. Make sure to --@includedir it
--- @param table loadpriority Table of files that should be loaded before any others in the directory
+-- @param table? loadpriority Table of files that should be loaded before any others in the directory
 -- @return table Table of return values of the scripts
 function builtins_library.requiredir(path, loadpriority)
 	checkluatype(path, TYPE_STRING)
@@ -883,12 +920,6 @@ function builtins_library.dodir(path, loadpriority)
 	return returns
 end
 
--- Used for loadstring, setfenv, and getfenv.
-local whitelistedEnvs = setmetatable({
-	[instance.env] = true,
-}, {__mode = 'k'})
-instance.whitelistedEnvs = whitelistedEnvs
-
 --- Like Lua 5.2 or LuaJIT's load/loadstring, except it has no mode parameter and, of course, the resulting function is in your instance's environment by default.
 -- For compatibility with older versions of Starfall, loadstring is NOT an alias of this function like it is in vanilla Lua 5.2/LuaJIT.
 -- @param string code String to compile
@@ -896,37 +927,24 @@ instance.whitelistedEnvs = whitelistedEnvs
 -- @param table? env Environment of compiled function
 -- @return function? Compiled function, or nil if failed to compile
 -- @return string? Error string, or nil if successfully compiled
-function builtins_library.loadstring(ld, source, mode, env)
+function builtins_library.loadstring(ld, source)
 	checkluatype(ld, TYPE_STRING)
 	if source == nil then
 		source = "=(load)"
 	else
 		checkluatype(source, TYPE_STRING)
 	end
-	if not isstring(mode) then
-		mode, env = nil, mode
-	end
-	if env == nil then
-		env = instance.env
-	else
-		checkluatype(env, TYPE_TABLE)
-	end
 	source = "SF:"..source
 	local retval = SF.CompileString(ld, source, false)
 	if isfunction(retval) then
-		whitelistedEnvs[env] = true
-		return setfenv(retval, env)
+		return setfenv(retval, instance.env)
 	end
 	return nil, tostring(retval)
 end
 builtins_library.load = builtins_library.loadstring
 
---- Lua's setfenv
--- Sets the environment of either the stack level or the function specified.
--- Note that this function will throw an error if you try to use it on anything outside of your sandbox.
--- @param function|number funcOrStackLevel Function or stack level to set the environment of
--- @param table tbl New environment
--- @return function Function with environment set to tbl
+--[[ High security risk functions that add very little value. Don't add again.
+
 function builtins_library.setfenv(location, environment)
 	if location == nil then
 		location = 2
@@ -942,11 +960,6 @@ function builtins_library.setfenv(location, environment)
 	SF.Throw("cannot change environment of given object", 2)
 end
 
---- Lua's getfenv
--- Returns the environment of either the stack level or the function specified.
--- Note that this function will return nil if the return value would be anything other than builtins_library or an environment you have passed to setfenv.
--- @param function|number funcOrStackLevel Function or stack level to get the environment of
--- @return table? Environment table (or nil, if restricted)
 function builtins_library.getfenv(location)
 	if location == nil then
 		location = 2
@@ -960,6 +973,8 @@ function builtins_library.getfenv(location)
 		return fenv
 	end
 end
+
+]]
 
 --- Gets an SF type's methods table
 -- @param string sfType Name of SF type

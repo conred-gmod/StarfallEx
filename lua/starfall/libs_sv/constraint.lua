@@ -76,6 +76,12 @@ function constr_methods:remove()
 	entList:remove(ent)
 end
 
+--- Overrides entity isConstraint to return true
+-- @server
+function constr_methods:isConstraint()
+	return true
+end
+
 --- Removes all constraints created by the calling chip
 -- @server
 function constraint_library.removeAll()
@@ -443,7 +449,7 @@ function constraint_library.nocollide(e1, e2, bone1, bone2)
 	checkluatype(bone1, TYPE_NUMBER)
 	checkluatype(bone2, TYPE_NUMBER)
 
-	local ent = constraint.NoCollide(ent1, ent2, bone1, bone2)
+	local ent = constraint.NoCollide(ent1, ent2, bone1, bone2, true)
 	if ent then
 		entList:register(instance, ent)
 		return cwrap(ent)
@@ -573,7 +579,13 @@ end
 -- @param Entity ent The entity
 -- @return table Table of tables containing constraint information
 function constraint_library.getTable(ent)
-	return instance.Sanitize(constraint.GetTable(getent(ent)))
+	local ret = constraint.GetTable(getent(ent))
+	for _, v in ipairs(ret) do
+		if v.Constraint then
+			v.Constraint = cwrap(v.Constraint)
+		end
+	end
+	return instance.Sanitize(ret)
 end
 
 --- Sets whether the chip should remove created constraints when the chip is removed

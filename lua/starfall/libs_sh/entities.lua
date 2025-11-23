@@ -1,5 +1,6 @@
 -- Global to all starfalls
 local checkluatype = SF.CheckLuaType
+local checkvector = SF.CheckVector
 local registerprivilege = SF.Permissions.registerPrivilege
 local dgetmeta = debug.getmetatable
 local ENT_META,NB_META,NPC_META,PHYS_META,PLY_META,VEH_META,WEP_META = FindMetaTable("Entity"),FindMetaTable("NextBot"),FindMetaTable("NPC"),FindMetaTable("PhysObj"),FindMetaTable("Player"),FindMetaTable("Vehicle"),FindMetaTable("Weapon")
@@ -55,7 +56,7 @@ SF.RegisterType("Entity", false, true, ENT_META)
 
 return function(instance)
 local checkpermission = instance.player ~= SF.Superuser and SF.Permissions.check or function() end
-local Ent_BoundingRadius,Ent_DrawModel,Ent_EmitSound,Ent_EntIndex,Ent_EyeAngles,Ent_EyePos,Ent_FindBodygroupByName,Ent_GetAngles,Ent_GetAttachment,Ent_GetAttachments,Ent_GetBodygroup,Ent_GetBodygroupCount,Ent_GetBodygroupName,Ent_GetBodyGroups,Ent_GetBoneCount,Ent_GetBoneMatrix,Ent_GetBoneName,Ent_GetBoneParent,Ent_GetBonePosition,Ent_GetBrushPlane,Ent_GetBrushPlaneCount,Ent_GetBrushSurfaces,Ent_GetChildren,Ent_GetClass,Ent_GetCollisionBounds,Ent_GetCollisionGroup,Ent_GetColor,Ent_GetColor4Part,Ent_GetCreationTime,Ent_GetDTAngle,Ent_GetDTBool,Ent_GetDTEntity,Ent_GetDTFloat,Ent_GetDTInt,Ent_GetDTString,Ent_GetDTVector,Ent_GetElasticity,Ent_GetFlexIDByName,Ent_GetFlexName,Ent_GetFlexNum,Ent_GetFlexScale,Ent_GetFlexWeight,Ent_GetForward,Ent_GetHitBoxBone,Ent_GetHitBoxBounds,Ent_GetHitBoxCount,Ent_GetHitBoxHitGroup,Ent_GetHitboxSet,Ent_GetHitboxSetCount,Ent_GetInternalVariable,Ent_GetLocalAngles,Ent_GetLocalPos,Ent_GetManipulateBoneAngles,Ent_GetManipulateBoneJiggle,Ent_GetManipulateBonePosition,Ent_GetManipulateBoneScale,Ent_GetMaterial,Ent_GetMaterials,Ent_GetMaxHealth,Ent_GetModel,Ent_GetModelBounds,Ent_GetModelContents,Ent_GetModelRadius,Ent_GetModelRenderBounds,Ent_GetModelScale,Ent_GetMoveType,Ent_GetNoDraw,Ent_GetNumPoseParameters,Ent_GetNWEntity,Ent_GetNWVarTable,Ent_GetOwner,Ent_GetParent,Ent_GetParentAttachment,Ent_GetPersistent,Ent_GetPhysicsObject,Ent_GetPhysicsObjectCount,Ent_GetPhysicsObjectNum,Ent_GetPos,Ent_GetPoseParameter,Ent_GetPoseParameterName,Ent_GetPoseParameterRange,Ent_GetRenderFX,Ent_GetRenderGroup,Ent_GetRenderMode,Ent_GetRight,Ent_GetRotatedAABB,Ent_GetSaveTable,Ent_GetSequence,Ent_GetSequenceCount,Ent_GetSequenceInfo,Ent_GetSequenceList,Ent_GetSequenceName,Ent_GetSkin,Ent_GetSolid,Ent_GetSolidFlags,Ent_GetSubMaterial,Ent_GetTable,Ent_GetUp,Ent_GetVelocity,Ent_GetWorldTransformMatrix,Ent_HasFlexManipulatior,Ent_Health,Ent_IsDormant,Ent_IsEffectActive,Ent_IsOnFire,Ent_IsOnGround,Ent_IsSequenceFinished,Ent_IsSolid,Ent_IsValid,Ent_IsWorld,Ent_LocalToWorld,Ent_LocalToWorldAngles,Ent_LookupAttachment,Ent_LookupBone,Ent_LookupPoseParameter,Ent_LookupSequence,Ent_MapCreationID,Ent_NearestPoint,Ent_OBBCenter,Ent_OBBMaxs,Ent_OBBMins,Ent_SequenceDuration,Ent_SetBodygroup,Ent_SetBoneMatrix,Ent_SetColor,Ent_SetColor4Part,Ent_SetFlexScale,Ent_SetFlexWeight,Ent_SetHealth,Ent_SetLOD,Ent_SetMaterial,Ent_SetMaxHealth,Ent_SetNoDraw,Ent_SetPersistent,Ent_SetPoseParameter,Ent_SetRenderBounds,Ent_SetRenderFX,Ent_SetRenderMode,Ent_SetSkin,Ent_SetSubMaterial,Ent_SetupBones,Ent_SkinCount,Ent_StopSound,Ent_TranslateBoneToPhysBone,Ent_TranslatePhysBoneToBone,Ent_WaterLevel,Ent_WorldSpaceAABB,Ent_WorldToLocal,Ent_WorldToLocalAngles = ENT_META.BoundingRadius,ENT_META.DrawModel,ENT_META.EmitSound,ENT_META.EntIndex,ENT_META.EyeAngles,ENT_META.EyePos,ENT_META.FindBodygroupByName,ENT_META.GetAngles,ENT_META.GetAttachment,ENT_META.GetAttachments,ENT_META.GetBodygroup,ENT_META.GetBodygroupCount,ENT_META.GetBodygroupName,ENT_META.GetBodyGroups,ENT_META.GetBoneCount,ENT_META.GetBoneMatrix,ENT_META.GetBoneName,ENT_META.GetBoneParent,ENT_META.GetBonePosition,ENT_META.GetBrushPlane,ENT_META.GetBrushPlaneCount,ENT_META.GetBrushSurfaces,ENT_META.GetChildren,ENT_META.GetClass,ENT_META.GetCollisionBounds,ENT_META.GetCollisionGroup,ENT_META.GetColor,ENT_META.GetColor4Part,ENT_META.GetCreationTime,ENT_META.GetDTAngle,ENT_META.GetDTBool,ENT_META.GetDTEntity,ENT_META.GetDTFloat,ENT_META.GetDTInt,ENT_META.GetDTString,ENT_META.GetDTVector,ENT_META.GetElasticity,ENT_META.GetFlexIDByName,ENT_META.GetFlexName,ENT_META.GetFlexNum,ENT_META.GetFlexScale,ENT_META.GetFlexWeight,ENT_META.GetForward,ENT_META.GetHitBoxBone,ENT_META.GetHitBoxBounds,ENT_META.GetHitBoxCount,ENT_META.GetHitBoxHitGroup,ENT_META.GetHitboxSet,ENT_META.GetHitboxSetCount,ENT_META.GetInternalVariable,ENT_META.GetLocalAngles,ENT_META.GetLocalPos,ENT_META.GetManipulateBoneAngles,ENT_META.GetManipulateBoneJiggle,ENT_META.GetManipulateBonePosition,ENT_META.GetManipulateBoneScale,ENT_META.GetMaterial,ENT_META.GetMaterials,ENT_META.GetMaxHealth,ENT_META.GetModel,ENT_META.GetModelBounds,ENT_META.GetModelContents,ENT_META.GetModelRadius,ENT_META.GetModelRenderBounds,ENT_META.GetModelScale,ENT_META.GetMoveType,ENT_META.GetNoDraw,ENT_META.GetNumPoseParameters,ENT_META.GetNWEntity,ENT_META.GetNWVarTable,ENT_META.GetOwner,ENT_META.GetParent,ENT_META.GetParentAttachment,ENT_META.GetPersistent,ENT_META.GetPhysicsObject,ENT_META.GetPhysicsObjectCount,ENT_META.GetPhysicsObjectNum,ENT_META.GetPos,ENT_META.GetPoseParameter,ENT_META.GetPoseParameterName,ENT_META.GetPoseParameterRange,ENT_META.GetRenderFX,ENT_META.GetRenderGroup,ENT_META.GetRenderMode,ENT_META.GetRight,ENT_META.GetRotatedAABB,ENT_META.GetSaveTable,ENT_META.GetSequence,ENT_META.GetSequenceCount,ENT_META.GetSequenceInfo,ENT_META.GetSequenceList,ENT_META.GetSequenceName,ENT_META.GetSkin,ENT_META.GetSolid,ENT_META.GetSolidFlags,ENT_META.GetSubMaterial,ENT_META.GetTable,ENT_META.GetUp,ENT_META.GetVelocity,ENT_META.GetWorldTransformMatrix,ENT_META.HasFlexManipulatior,ENT_META.Health,ENT_META.IsDormant,ENT_META.IsEffectActive,ENT_META.IsOnFire,ENT_META.IsOnGround,ENT_META.IsSequenceFinished,ENT_META.IsSolid,ENT_META.IsValid,ENT_META.IsWorld,ENT_META.LocalToWorld,ENT_META.LocalToWorldAngles,ENT_META.LookupAttachment,ENT_META.LookupBone,ENT_META.LookupPoseParameter,ENT_META.LookupSequence,ENT_META.MapCreationID,ENT_META.NearestPoint,ENT_META.OBBCenter,ENT_META.OBBMaxs,ENT_META.OBBMins,ENT_META.SequenceDuration,ENT_META.SetBodygroup,ENT_META.SetBoneMatrix,ENT_META.SetColor,ENT_META.SetColor4Part,ENT_META.SetFlexScale,ENT_META.SetFlexWeight,ENT_META.SetHealth,ENT_META.SetLOD,ENT_META.SetMaterial,ENT_META.SetMaxHealth,ENT_META.SetNoDraw,ENT_META.SetPersistent,ENT_META.SetPoseParameter,ENT_META.SetRenderBounds,ENT_META.SetRenderFX,ENT_META.SetRenderMode,ENT_META.SetSkin,ENT_META.SetSubMaterial,ENT_META.SetupBones,ENT_META.SkinCount,ENT_META.StopSound,ENT_META.TranslateBoneToPhysBone,ENT_META.TranslatePhysBoneToBone,ENT_META.WaterLevel,ENT_META.WorldSpaceAABB,ENT_META.WorldToLocal,ENT_META.WorldToLocalAngles
+local Ent_BoundingRadius,Ent_DrawModel,Ent_EmitSound,Ent_EntIndex,Ent_EyeAngles,Ent_EyePos,Ent_FindBodygroupByName,Ent_GetAngles,Ent_GetAttachment,Ent_GetAttachments,Ent_GetBodygroup,Ent_GetBodygroupCount,Ent_GetBodygroupName,Ent_GetBodyGroups,Ent_GetBoneCount,Ent_GetBoneMatrix,Ent_GetBoneName,Ent_GetBoneParent,Ent_GetBonePosition,Ent_GetBrushPlane,Ent_GetBrushPlaneCount,Ent_GetBrushSurfaces,Ent_GetChildren,Ent_GetClass,Ent_GetCollisionBounds,Ent_GetCollisionGroup,Ent_GetColor,Ent_GetColor4Part,Ent_GetCreationTime,Ent_GetDTAngle,Ent_GetDTBool,Ent_GetDTEntity,Ent_GetDTFloat,Ent_GetDTInt,Ent_GetDTString,Ent_GetDTVector,Ent_GetElasticity,Ent_GetFlexIDByName,Ent_GetFlexName,Ent_GetFlexNum,Ent_GetFlexScale,Ent_GetFlexWeight,Ent_GetFlexBounds,Ent_GetForward,Ent_GetHitBoxBone,Ent_GetHitBoxBounds,Ent_GetHitBoxCount,Ent_GetHitBoxHitGroup,Ent_GetHitboxSet,Ent_GetHitboxSetCount,Ent_GetInternalVariable,Ent_GetLocalAngles,Ent_GetLocalPos,Ent_GetManipulateBoneAngles,Ent_GetManipulateBoneJiggle,Ent_GetManipulateBonePosition,Ent_GetManipulateBoneScale,Ent_GetMaterial,Ent_GetMaterials,Ent_GetMaxHealth,Ent_GetModel,Ent_GetModelBounds,Ent_GetModelContents,Ent_GetModelRadius,Ent_GetModelRenderBounds,Ent_GetModelScale,Ent_GetMoveType,Ent_GetNoDraw,Ent_GetNumPoseParameters,Ent_GetNWEntity,Ent_GetNWVarTable,Ent_GetOwner,Ent_GetParent,Ent_GetParentAttachment,Ent_GetPersistent,Ent_GetPhysicsObject,Ent_GetPhysicsObjectCount,Ent_GetPhysicsObjectNum,Ent_GetPos,Ent_GetPoseParameter,Ent_GetPoseParameterName,Ent_GetPoseParameterRange,Ent_GetRenderFX,Ent_GetRenderGroup,Ent_GetRenderMode,Ent_GetRight,Ent_GetRotatedAABB,Ent_GetSaveTable,Ent_GetSequence,Ent_GetSequenceCount,Ent_GetSequenceInfo,Ent_GetSequenceList,Ent_GetSequenceName,Ent_GetSkin,Ent_GetSolid,Ent_GetSolidFlags,Ent_GetSubMaterial,Ent_GetTable,Ent_GetUp,Ent_GetVelocity,Ent_GetWorldTransformMatrix,Ent_HasFlexManipulatior,Ent_Health,Ent_IsDormant,Ent_IsEffectActive,Ent_IsOnFire,Ent_IsOnGround,Ent_IsSequenceFinished,Ent_IsSolid,Ent_IsValid,Ent_IsWorld,Ent_LocalToWorld,Ent_LocalToWorldAngles,Ent_LookupAttachment,Ent_LookupBone,Ent_LookupPoseParameter,Ent_LookupSequence,Ent_MapCreationID,Ent_NearestPoint,Ent_OBBCenter,Ent_OBBMaxs,Ent_OBBMins,Ent_SequenceDuration,Ent_SetBodygroup,Ent_SetBoneMatrix,Ent_SetColor,Ent_SetColor4Part,Ent_SetEyeTarget,Ent_SetFlexScale,Ent_SetFlexWeight,Ent_SetHealth,Ent_SetLOD,Ent_SetMaterial,Ent_SetMaxHealth,Ent_SetNoDraw,Ent_SetPersistent,Ent_SetPoseParameter,Ent_SetRenderBounds,Ent_SetRenderFX,Ent_SetRenderMode,Ent_SetSkin,Ent_SetSubMaterial,Ent_SetupBones,Ent_SkinCount,Ent_StopSound,Ent_TranslateBoneToPhysBone,Ent_TranslatePhysBoneToBone,Ent_WaterLevel,Ent_WorldSpaceAABB,Ent_WorldToLocal,Ent_WorldToLocalAngles = ENT_META.BoundingRadius,ENT_META.DrawModel,ENT_META.EmitSound,ENT_META.EntIndex,ENT_META.EyeAngles,ENT_META.EyePos,ENT_META.FindBodygroupByName,ENT_META.GetAngles,ENT_META.GetAttachment,ENT_META.GetAttachments,ENT_META.GetBodygroup,ENT_META.GetBodygroupCount,ENT_META.GetBodygroupName,ENT_META.GetBodyGroups,ENT_META.GetBoneCount,ENT_META.GetBoneMatrix,ENT_META.GetBoneName,ENT_META.GetBoneParent,ENT_META.GetBonePosition,ENT_META.GetBrushPlane,ENT_META.GetBrushPlaneCount,ENT_META.GetBrushSurfaces,ENT_META.GetChildren,ENT_META.GetClass,ENT_META.GetCollisionBounds,ENT_META.GetCollisionGroup,ENT_META.GetColor,ENT_META.GetColor4Part,ENT_META.GetCreationTime,ENT_META.GetDTAngle,ENT_META.GetDTBool,ENT_META.GetDTEntity,ENT_META.GetDTFloat,ENT_META.GetDTInt,ENT_META.GetDTString,ENT_META.GetDTVector,ENT_META.GetElasticity,ENT_META.GetFlexIDByName,ENT_META.GetFlexName,ENT_META.GetFlexNum,ENT_META.GetFlexScale,ENT_META.GetFlexWeight,ENT_META.GetFlexBounds,ENT_META.GetForward,ENT_META.GetHitBoxBone,ENT_META.GetHitBoxBounds,ENT_META.GetHitBoxCount,ENT_META.GetHitBoxHitGroup,ENT_META.GetHitboxSet,ENT_META.GetHitboxSetCount,ENT_META.GetInternalVariable,ENT_META.GetLocalAngles,ENT_META.GetLocalPos,ENT_META.GetManipulateBoneAngles,ENT_META.GetManipulateBoneJiggle,ENT_META.GetManipulateBonePosition,ENT_META.GetManipulateBoneScale,ENT_META.GetMaterial,ENT_META.GetMaterials,ENT_META.GetMaxHealth,ENT_META.GetModel,ENT_META.GetModelBounds,ENT_META.GetModelContents,ENT_META.GetModelRadius,ENT_META.GetModelRenderBounds,ENT_META.GetModelScale,ENT_META.GetMoveType,ENT_META.GetNoDraw,ENT_META.GetNumPoseParameters,ENT_META.GetNWEntity,ENT_META.GetNWVarTable,ENT_META.GetOwner,ENT_META.GetParent,ENT_META.GetParentAttachment,ENT_META.GetPersistent,ENT_META.GetPhysicsObject,ENT_META.GetPhysicsObjectCount,ENT_META.GetPhysicsObjectNum,ENT_META.GetPos,ENT_META.GetPoseParameter,ENT_META.GetPoseParameterName,ENT_META.GetPoseParameterRange,ENT_META.GetRenderFX,ENT_META.GetRenderGroup,ENT_META.GetRenderMode,ENT_META.GetRight,ENT_META.GetRotatedAABB,ENT_META.GetSaveTable,ENT_META.GetSequence,ENT_META.GetSequenceCount,ENT_META.GetSequenceInfo,ENT_META.GetSequenceList,ENT_META.GetSequenceName,ENT_META.GetSkin,ENT_META.GetSolid,ENT_META.GetSolidFlags,ENT_META.GetSubMaterial,ENT_META.GetTable,ENT_META.GetUp,ENT_META.GetVelocity,ENT_META.GetWorldTransformMatrix,ENT_META.HasFlexManipulatior,ENT_META.Health,ENT_META.IsDormant,ENT_META.IsEffectActive,ENT_META.IsOnFire,ENT_META.IsOnGround,ENT_META.IsSequenceFinished,ENT_META.IsSolid,ENT_META.IsValid,ENT_META.IsWorld,ENT_META.LocalToWorld,ENT_META.LocalToWorldAngles,ENT_META.LookupAttachment,ENT_META.LookupBone,ENT_META.LookupPoseParameter,ENT_META.LookupSequence,ENT_META.MapCreationID,ENT_META.NearestPoint,ENT_META.OBBCenter,ENT_META.OBBMaxs,ENT_META.OBBMins,ENT_META.SequenceDuration,ENT_META.SetBodygroup,ENT_META.SetBoneMatrix,ENT_META.SetColor,ENT_META.SetColor4Part,ENT_META.SetEyeTarget,ENT_META.SetFlexScale,ENT_META.SetFlexWeight,ENT_META.SetHealth,ENT_META.SetLOD,ENT_META.SetMaterial,ENT_META.SetMaxHealth,ENT_META.SetNoDraw,ENT_META.SetPersistent,ENT_META.SetPoseParameter,ENT_META.SetRenderBounds,ENT_META.SetRenderFX,ENT_META.SetRenderMode,ENT_META.SetSkin,ENT_META.SetSubMaterial,ENT_META.SetupBones,ENT_META.SkinCount,ENT_META.StopSound,ENT_META.TranslateBoneToPhysBone,ENT_META.TranslatePhysBoneToBone,ENT_META.WaterLevel,ENT_META.WorldSpaceAABB,ENT_META.WorldToLocal,ENT_META.WorldToLocalAngles
 local function Ent_IsNextBot(ent) return dgetmeta(ent)==NB_META end
 local function Ent_IsNPC(ent) return dgetmeta(ent)==NPC_META end
 local function Ent_IsPlayer(ent) return dgetmeta(ent)==PLY_META end
@@ -157,12 +158,22 @@ if CLIENT then
 	--- Sets the sheet color of a player-model
 	-- Can only be used on players, bots, ragdolls, holograms and Starfall NextBots
 	-- @client
-	-- @param Color clr RGB color to use, alpha channel not supported
+	-- @param Color|Vector clr RGB color to use, alpha channel not supported.
 	function ents_methods:setSheetColor(clr)
 		local ent = getent(self)
 		checkpermission(instance, ent, "entities.setRenderProperty")
-		clr = cunwrap(clr)
-		local vec = Vector(clr.r / 255, clr.g / 255, clr.b / 255)
+		
+		local metaType = dgetmeta( clr )
+		local vec
+		if metaType == col_meta then
+			clr = cunwrap(clr)
+			vec = Vector(clr.r / 255, clr.g / 255, clr.b / 255)
+		elseif metaType == vec_meta then
+			vec = vunwrap( clr )
+		else
+			SF.ThrowTypeError("Color or Vector", SF.GetType(clr), 2)
+		end
+
 
 		if Ent_IsPlayer(ent) then
 			Ent_GetTable(ent).SetPlayerColor(ent, vec)
@@ -262,16 +273,45 @@ if sound_library then
 	function sound_library:emitSoundsLeft()
 		return emitSoundBurst:check(instance.player)
 	end
+
+	--- Emits a sound not attached to any entity at the specified position
+	-- @param string snd Sound path
+	-- @param Vector position Where the sound originates from
+	-- @param number? soundLevel Default 75
+	-- @param number? pitchPercent Default 100
+	-- @param number? volume Default 1
+	-- @param number? channel Default CHAN_AUTO or CHAN_WEAPON for weapons
+	-- @param number? dsp Default 1 DSP preset
+	-- @param boolean? nofilter (Optional) Boolean Make the sound play for everyone regardless of range or location. Only affects Server-side sounds.
+	function sound_library.emitSound(snd, position, lvl, pitch, volume, channel, dsp, nofilter)
+		checkluatype(snd, TYPE_STRING)
+		if nofilter~=nil then checkluatype(nofilter, TYPE_BOOL) end
+		SF.CheckSound(instance.player, snd)
+
+		checkpermission(instance, nil, "sound.emitSound")
+		emitSoundBurst:use(instance.player, 1)
+
+		local filter
+		if nofilter and SERVER then
+			filter = RecipientFilter()
+			filter:AddAllPlayers()
+		end
+		
+		EmitSound(snd, vunwrap1(position), 0, channel, volume, lvl, nil, pitch, number, filter)
+	end
 end
 
 --- Plays a sound on the entity
 -- @param string snd Sound path
--- @param number soundLevel Default 75
--- @param number pitchPercent Default 100
--- @param number volume Default 1
--- @param number channel Default CHAN_AUTO or CHAN_WEAPON for weapons
-function ents_methods:emitSound(snd, lvl, pitch, volume, channel)
+-- @param number? soundLevel Default 75
+-- @param number? pitchPercent Default 100
+-- @param number? volume Default 1
+-- @param number? channel Default CHAN_AUTO or CHAN_WEAPON for weapons
+-- @param number? dsp Default 1 DSP preset
+-- @param boolean? nofilter (Optional) Boolean Make the sound play for everyone regardless of range or location. Only affects Server-side sounds.
+function ents_methods:emitSound(snd, lvl, pitch, volume, channel, dsp, nofilter)
 	checkluatype(snd, TYPE_STRING)
+	if nofilter~=nil then checkluatype(nofilter, TYPE_BOOL) end
 	SF.CheckSound(instance.player, snd)
 
 	local ent = getent(self)
@@ -281,7 +321,14 @@ function ents_methods:emitSound(snd, lvl, pitch, volume, channel)
 	local snds = soundsByEntity[ent]
 	if not snds then snds = {} soundsByEntity[ent] = snds end
 	snds[snd] = true
-	Ent_EmitSound(ent, snd, lvl, pitch, volume, channel)
+
+	local filter
+	if nofilter and SERVER then
+		filter = RecipientFilter()
+		filter:AddAllPlayers()
+	end
+	
+	Ent_EmitSound(ent, snd, lvl, pitch, volume, channel, nil, dsp, filter)
 end
 
 --- Stops a sound on the entity
@@ -1183,8 +1230,9 @@ function ents_methods:getBoneMatrix(bone)
 	return mwrap(Ent_GetBoneMatrix(getent(self), bone))
 end
 
---- Sets the bone matrix of given bone to given matrix. See also Entity:getBoneMatrix.
--- @shared
+if CLIENT then
+--- Sets the bone matrix of given bone to given matrix. Call setupBones to apply all changes.
+-- @client
 -- @param number bone The bone ID
 -- @param VMatrix matrix The matrix to set
 function ents_methods:setBoneMatrix(bone, matrix)
@@ -1194,7 +1242,33 @@ function ents_methods:setBoneMatrix(bone, matrix)
 	checkluatype(bone, TYPE_NUMBER)
 	checkpermission(instance, ent, "entities.setRenderProperty")
 
-	Ent_SetBoneMatrix(ent, bone, matrix)
+	bone = math.Clamp(math.floor(bone), 0, Ent_GetBoneCount(ent)-1)
+	if Ent_GetBoneName(ent, bone) == "__INVALIDBONE__" then SF.Throw("Invalid Bone! "..bone, 2) end
+
+	local ent_tbl = Ent_GetTable(ent)
+	local boneTbl = ent_tbl.SF_BoneMatrix
+	if matrix then
+		if boneTbl then
+			boneTbl[bone] = matrix
+		else
+			boneTbl = {[bone] = matrix}
+			ent_tbl.SF_BoneMatrix = boneTbl
+			ent:AddCallback("BuildBonePositions", function(ent, bonecount)
+				for i=0, bonecount-1 do
+					if boneTbl[i] then Ent_SetBoneMatrix(ent, i, boneTbl[i]) end
+				end
+			end)
+		end
+	elseif boneTbl then
+		boneTbl[bone] = nil
+	end
+end
+
+--- Invokes the BuildBonePositions of an entity. Should be called after setting all bone matrices.
+-- @client
+function ents_methods:setupBones()
+	Ent_SetupBones(getent(self))
+end
 end
 
 --- Returns the world transform matrix of the entity
@@ -1416,12 +1490,32 @@ function ents_methods:localToWorld(data)
 	return vwrap(Ent_LocalToWorld(getent(self), vunwrap1(data)))
 end
 
---- Converts a direction vector in entity local space to world space
--- @shared
--- @param Vector data Local space vector direction
--- @return Vector data as world space vector direction
-function ents_methods:localToWorldVector(data)
-	return vwrap(Phys_LocalToWorldVector(Ent_GetPhysicsObject(getent(self)), vunwrap1(data)))
+if SERVER then
+	--- Converts a direction vector in entity local space to world space
+	-- @shared
+	-- @param Vector data Local space vector direction
+	-- @return Vector data as world space vector direction
+	function ents_methods:localToWorldVector(data)
+		return vwrap(Phys_LocalToWorldVector(Ent_GetPhysicsObject(getent(self)), vunwrap1(data)))
+	end
+
+	--- Converts a direction vector in world space to entity local space
+	-- @shared
+	-- @param Vector data World space direction vector
+	-- @return Vector data as local space direction vector
+	function ents_methods:worldToLocalVector(data)
+		return vwrap(Phys_WorldToLocalVector(Ent_GetPhysicsObject(getent(self)), vunwrap1(data)))
+	end
+else
+	function ents_methods:localToWorldVector(data)
+		local ent = getent(self)
+		return vwrap(Ent_LocalToWorld(ent, vunwrap1(data)) - Ent_GetPos(ent))
+	end
+
+	function ents_methods:worldToLocalVector(data)
+		local ent = getent(self)
+		return vwrap(Ent_WorldToLocal(ent, vunwrap1(data) + Ent_GetPos(ent)))
+	end
 end
 
 --- Converts an angle in entity local space to world space
@@ -1438,14 +1532,6 @@ end
 -- @return Vector data as local space vector
 function ents_methods:worldToLocal(data)
 	return vwrap(Ent_WorldToLocal(getent(self), vunwrap1(data)))
-end
-
---- Converts a direction vector in world space to entity local space
--- @shared
--- @param Vector data World space direction vector
--- @return Vector data as local space direction vector
-function ents_methods:worldToLocalVector(data)
-	return vwrap(Phys_WorldToLocalVector(Ent_GetPhysicsObject(getent(self)), vunwrap1(data)))
 end
 
 --- Converts an angle in world space to entity local space
@@ -1663,6 +1749,37 @@ function ents_methods:setFlexScale(scale)
 	Ent_SetFlexScale(ent, scale)
 end
 
+--- Gets the acceptable value range for the flex controller, as defined by the model
+-- @shared
+-- @param number flexid The id of the flex
+-- @return number The minimum value for this flex
+-- @return number The maximum value for this flex
+function ents_methods:getFlexBounds(flexid)
+	local ent = getent(self)
+	
+	checkluatype(flexid, TYPE_NUMBER)
+	flexid = math.floor(flexid)
+	
+	if flexid < 0 or flexid >= Ent_GetFlexNum(ent) then
+		SF.Throw("Invalid flex: "..flexid, 2)
+	end
+	
+	return Ent_GetFlexBounds(ent, flexid)
+end
+
+--- Overrides the look position for an entity's eyes. The target position will be in world coordinates for NPCs, but it will be in local coordinates relative to the eyes attachment for ragdolls.
+--  Setting the target position to Vector(0,0,0) will remove the override entirely.
+-- @param Vector pos The position to look at
+function ents_methods:setEyeTarget(pos)
+    local ent = getent(self)
+	
+	vec = vunwrap(pos)
+	checkvector(vec)
+	checkpermission(instance,ent,"entities.canTool")
+	
+    Ent_SetEyeTarget(ent, vec)
+end
+	
 --- Gets the model of an entity
 -- @shared
 -- @return string Model of the entity

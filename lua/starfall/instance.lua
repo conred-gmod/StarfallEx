@@ -59,7 +59,7 @@ function SF.Instance.Compile(code, mainfile, player, entity)
 		code = { [mainfile] = code }
 	end
 	local ok, message = hook.Run("StarfallCanCompile", code, mainfile, player, entity)
-	if ok == false then return false, { message = message, traceback = "" } end
+	if ok == false then return false, { message = message or "StarfallCanCompile hook returned false!", traceback = "" } end
 	if CLIENT and not SF.CvarEnabled:GetBool() then return false, { message = "Clientside disabled", traceback = "" } end
 
 	local instance = setmetatable({}, SF.Instance)
@@ -144,6 +144,8 @@ function SF.Instance.Compile(code, mainfile, player, entity)
 
 		instance.scripts[filename] = func
 	end
+
+	hook.Run("StarfallPostInstanceCompile", instance)
 
 	return true, instance
 end
@@ -320,6 +322,7 @@ function SF.Instance:BuildEnvironment()
 				local valuet = TypeID(value)
 				if not safe_types[keyt] then
 					key = WrapObject(key) or (keyt == TYPE_TABLE and (completed_tables[key] or RecursiveSanitize(key)) or nil)
+					if key==nil then continue end
 				end
 				if not safe_types[valuet] then
 					value = WrapObject(value) or (valuet == TYPE_TABLE and (completed_tables[value] or RecursiveSanitize(value)) or nil)
@@ -341,6 +344,7 @@ function SF.Instance:BuildEnvironment()
 			for key, value in pairs(tbl) do
 				if TypeID(key) == TYPE_TABLE then
 					key = UnwrapObject(key) or completed_tables[key] or RecursiveUnsanitize(key)
+					if key==nil then continue end
 				end
 				if TypeID(value) == TYPE_TABLE then
 					value = UnwrapObject(value) or completed_tables[value] or RecursiveUnsanitize(value)

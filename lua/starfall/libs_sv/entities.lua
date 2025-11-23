@@ -277,6 +277,8 @@ function ents_methods:applyDamage(amt, attacker, inflictor, dmgtype, pos)
 	local ent = getent(self)
 
 	checkluatype(amt, TYPE_NUMBER)
+	amt = math.Clamp(amt, 0, 1073741824)
+
 	checkpermission(instance, ent, "entities.applyDamage")
 
 	local dmg = DamageInfo()
@@ -716,7 +718,7 @@ function ents_methods:setMass(mass)
 
 	checkpermission(instance, ent, "entities.setMass")
 
-	local m = math.Clamp(mass, 1, 50000)
+	local m = math.Clamp(mass, 0.001, 50000)
 	Phys_SetMass(phys, m)
 	duplicator.StoreEntityModifier(ent, "mass", { Mass = m })
 end

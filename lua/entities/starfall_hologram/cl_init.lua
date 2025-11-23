@@ -170,7 +170,7 @@ net.Receive("starfall_hologram_clips", function()
 				local entind = clipdata:readUInt16()
 				if entind~=0 then
 					local creationid = clipdata:readUInt32()
-					SF.WaitForEntity(entind, creationid, function(e) clip.entity = e end)
+					SF.WaitForEntity:add(entind, creationid, function(e) clip.entity = e end)
 				end
 				clips[index] = clip
 			end
@@ -181,7 +181,7 @@ net.Receive("starfall_hologram_clips", function()
 		end
 	end
 
-	SF.WaitForEntity(index, creationindex, applyHologramClips)
+	SF.WaitForEntity:add(index, creationindex, applyHologramClips)
 end)
 
 -- For when the hologram matrix gets cleared
@@ -212,7 +212,10 @@ local function ShowHologramOwners()
 			local name = "No Owner"
 			local steamID = ""
 			local ply = SF.Permissions.getOwner(ent)
-			if IsValid(ply) then
+
+			if ply==SF.Superuser then
+				name = "(Superuser)"
+			elseif IsValid(ply) then
 				name = ply:Name()
 				steamID = ply:SteamID()
 			else
